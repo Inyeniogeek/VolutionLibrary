@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import type { RootState } from '../../store';
 import { searchBooks } from '../../services/bookApi';
 import { setBooks, setLoading, setError, setSearchQuery } from './bookSlice';
@@ -36,60 +37,59 @@ const BookCatalog = () => {
 
   return (
     <div className="animate-fade-in">
-      <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-        <h1>Catálogo de Libros</h1>
-        <p className="text-muted" style={{ marginBottom: '2rem' }}>Encuentra tu próxima lectura en nuestra biblioteca digital.</p>
+      <div className="text-center mb-12">
+        <h1 className="text-4xl md:text-5xl font-bold mb-4">Catálogo de Libros</h1>
+        <p className="text-zinc-400 mb-8 max-w-xl mx-auto">Encuentra tu próxima lectura en nuestra biblioteca digital.</p>
         
-        <form onSubmit={handleSearch} className="flex items-center justify-center" style={{ gap: '1rem', maxWidth: '600px', margin: '0 auto' }}>
-          <input
-            type="text"
-            value={localQuery}
-            onChange={(e) => setLocalQuery(e.target.value)}
-            placeholder="Buscar por título, autor o palabra clave..."
-            style={{
-              flex: 1,
-              padding: '1rem',
-              borderRadius: 'var(--border-radius-lg)',
-              border: '1px solid var(--border-color)',
-              background: 'rgba(255, 255, 255, 0.05)',
-              color: 'white',
-              outline: 'none',
-              fontSize: '1rem'
-            }}
-          />
-          <button type="submit" className="btn btn-primary" style={{ padding: '1rem 2rem', borderRadius: 'var(--border-radius-lg)' }} disabled={loading}>
+        <form onSubmit={handleSearch} className="flex items-center justify-center gap-4 max-w-2xl mx-auto">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={localQuery}
+              onChange={(e) => setLocalQuery(e.target.value)}
+              placeholder="Buscar por título, autor o palabra clave..."
+              className="w-full p-4 pl-12 rounded-2xl border border-white/10 bg-white/5 text-white outline-none text-base focus:border-indigo-500 transition-colors shadow-lg"
+            />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
+          </div>
+          <button type="submit" className="btn btn-primary px-8 py-4 rounded-2xl font-medium shadow-xl" disabled={loading}>
             {loading ? 'Buscando...' : 'Buscar'}
           </button>
         </form>
       </div>
 
       {error && (
-        <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', color: 'var(--danger)', padding: '1rem', borderRadius: 'var(--border-radius-md)', textAlign: 'center', marginBottom: '2rem' }}>
+        <div className="bg-red-500/20 border border-red-500/30 text-red-400 p-4 rounded-xl text-center mb-8 max-w-xl mx-auto">
           {error}
         </div>
       )}
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>Cargando libros...</div>
+        <div className="text-center py-16 text-zinc-400">Cargando libros...</div>
       ) : (
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '2rem' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {items.map((book) => (
-            <Link to={`/book/${book.id}`} key={book.id} style={{ display: 'block' }}>
-              <div className="glass-panel" style={{ height: '100%', display: 'flex', flexDirection: 'column', transition: 'all var(--transition-normal)' }}
-                   onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-10px) scale(1.02)'; e.currentTarget.style.boxShadow = 'var(--shadow-glow)'; }}
-                   onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0) scale(1)'; e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}>
-                <div style={{ height: '380px', overflow: 'hidden', borderTopLeftRadius: 'var(--border-radius-lg)', borderTopRightRadius: 'var(--border-radius-lg)', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Link to={`/book/${book.id}`} key={book.id} className="block group">
+              <div 
+                className="glass-panel h-full flex flex-col transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-[0_0_25px_rgba(99,102,241,0.35)] rounded-2xl overflow-hidden border border-white/10"
+              >
+                <div className="h-[380px] overflow-hidden bg-zinc-900 flex items-center justify-center relative">
                   {book.coverUrl ? (
-                    <img src={book.coverUrl} alt={book.title} style={{ height: '100%', width: '100%', objectFit: 'cover' }} loading="lazy" />
+                    <img 
+                      src={book.coverUrl} 
+                      alt={book.title} 
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                      loading="lazy" 
+                    />
                   ) : (
-                    <span style={{ color: 'var(--text-muted)' }}>Sin Portada</span>
+                    <span className="text-zinc-500">Sin Portada</span>
                   )}
                 </div>
-                <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--text-primary)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{book.title}</h3>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1rem', flex: 1 }}>{book.authors.join(', ')}</p>
+                <div className="p-6 flex-1 flex flex-col">
+                  <h3 className="text-lg font-semibold mb-2 text-white line-clamp-2">{book.title}</h3>
+                  <p className="text-sm text-zinc-400 mb-4 flex-1">{book.authors.join(', ')}</p>
                   {book.categories.length > 0 && (
-                    <span style={{ fontSize: '0.75rem', background: 'var(--bg-glass-light)', padding: '0.25rem 0.75rem', borderRadius: '999px', alignSelf: 'flex-start', color: 'var(--accent-primary)' }}>
+                    <span className="text-xs bg-white/10 text-indigo-300 px-3 py-1 rounded-full self-start font-medium">
                       {book.categories[0]}
                     </span>
                   )}
@@ -98,7 +98,7 @@ const BookCatalog = () => {
             </Link>
           ))}
           {items.length === 0 && !loading && !error && (
-            <div style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--text-muted)', padding: '3rem' }}>
+            <div className="col-span-full text-center text-zinc-500 py-12">
               No se encontraron libros para "{searchQuery}".
             </div>
           )}

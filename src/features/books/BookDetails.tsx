@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { toast } from 'sonner';
 import type { RootState } from '../../store';
 import { getBookById } from '../../services/bookApi';
 import type { Book } from '../../services/bookApi';
@@ -31,7 +32,10 @@ const BookDetails = () => {
   }, [id]);
 
   const handleBorrow = async () => {
-    if (!user) return navigate('/login');
+    if (!user) {
+      toast.info('Por favor inicia sesión para pedir un préstamo');
+      return navigate('/login');
+    }
     if (!book) return;
     
     setActionLoading(true);
@@ -51,15 +55,18 @@ const BookDetails = () => {
     setActionLoading(false);
     
     if (error) {
-      alert('Error al procesar el préstamo');
+      toast.error('Error al procesar el préstamo');
     } else {
-      alert('¡Libro prestado con éxito! Tienes 14 días para leerlo.');
+      toast.success('¡Libro prestado con éxito! Tienes 14 días para leerlo');
       navigate('/loans');
     }
   };
 
   const handleWishlist = async () => {
-    if (!user) return navigate('/login');
+    if (!user) {
+      toast.info('Por favor inicia sesión para guardar en tu lista de deseos');
+      return navigate('/login');
+    }
     if (!book) return;
 
     setActionLoading(true);
@@ -75,45 +82,47 @@ const BookDetails = () => {
     setActionLoading(false);
 
     if (error) {
-      alert('Error al añadir a la lista de deseos');
+      toast.error('Error al añadir a la lista de deseos');
     } else {
-      alert('Añadido a tu lista de deseos');
+      toast.success('Añadido a tu lista de deseos con éxito');
       navigate('/wishlist');
     }
   };
 
-  if (loading) return <div style={{ textAlign: 'center', padding: '4rem' }}>Cargando detalles...</div>;
-  if (error) return <div style={{ textAlign: 'center', color: 'var(--danger)', padding: '4rem' }}>{error}</div>;
+  if (loading) return <div className="text-center py-16 text-zinc-400">Cargando detalles...</div>;
+  if (error) return <div className="text-center text-red-400 py-16">{error}</div>;
   if (!book) return null;
 
   return (
-    <div className="animate-fade-in container" style={{ maxWidth: '900px' }}>
-      <div className="glass-panel flex flex-col" style={{ padding: '2rem', gap: '2rem', borderTop: '4px solid var(--accent-primary)' }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', alignSelf: 'flex-start', fontSize: '1rem' }}>
+    <div className="animate-fade-in max-w-4xl mx-auto w-full">
+      <div className="glass-panel flex flex-col p-8 gap-8 border-t-4 border-indigo-500">
+        <button onClick={() => navigate(-1)} className="bg-transparent border-0 text-zinc-400 hover:text-white cursor-pointer self-start text-base transition-colors">
           &larr; Volver
         </button>
 
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '3rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <div className="flex justify-center">
             {book.coverUrl ? (
-              <img src={book.coverUrl} alt={book.title} style={{ borderRadius: 'var(--border-radius-md)', boxShadow: 'var(--shadow-lg)', maxWidth: '100%', maxHeight: '400px', objectFit: 'cover' }} />
+              <img src={book.coverUrl} alt={book.title} className="rounded-xl shadow-2xl max-w-full max-h-[400px] object-cover" />
             ) : (
-              <div style={{ width: '250px', height: '350px', background: 'var(--bg-secondary)', borderRadius: 'var(--border-radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+              <div className="w-[250px] h-[350px] bg-zinc-800 rounded-xl flex items-center justify-center text-zinc-500">
                 Sin Portada
               </div>
             )}
           </div>
 
-          <div className="flex flex-col" style={{ gap: '1.5rem' }}>
+          <div className="flex flex-col gap-6">
             <div>
-              <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', background: 'none', WebkitTextFillColor: 'initial', color: 'var(--text-primary)' }}>{book.title}</h1>
-              <p style={{ fontSize: '1.25rem', color: 'var(--accent-primary)' }}>{book.authors.join(', ')}</p>
+              <h1 className="text-3xl font-semibold mb-2 text-white">
+                {book.title}
+              </h1>
+              <p className="text-xl text-indigo-400 font-medium">{book.authors.join(', ')}</p>
             </div>
 
             {book.categories.length > 0 && (
-              <div className="flex" style={{ gap: '0.5rem', flexWrap: 'wrap' }}>
+              <div className="flex gap-2 flex-wrap">
                 {book.categories.map(cat => (
-                  <span key={cat} style={{ background: 'var(--bg-glass-light)', padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.875rem' }}>
+                  <span key={cat} className="bg-white/10 text-indigo-300 px-3 py-1 rounded-full text-xs font-medium">
                     {cat}
                   </span>
                 ))}
@@ -121,18 +130,18 @@ const BookDetails = () => {
             )}
 
             {book.publishedDate && (
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+              <p className="text-zinc-400 text-sm">
                 Fecha de publicación: {book.publishedDate}
               </p>
             )}
 
-            <div style={{ color: 'var(--text-secondary)', lineHeight: '1.8' }} dangerouslySetInnerHTML={{ __html: book.description }} />
+            <div className="text-zinc-300 leading-relaxed text-sm" dangerouslySetInnerHTML={{ __html: book.description }} />
 
-            <div className="flex" style={{ gap: '1rem', marginTop: 'auto', paddingTop: '2rem' }}>
-              <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleBorrow} disabled={actionLoading}>
+            <div className="flex gap-4 mt-auto pt-8">
+              <button className="btn btn-primary flex-1 py-3 text-base" onClick={handleBorrow} disabled={actionLoading}>
                 {actionLoading ? 'Procesando...' : 'Tomar Prestado'}
               </button>
-              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={handleWishlist} disabled={actionLoading}>
+              <button className="btn btn-secondary flex-1 py-3 text-base" onClick={handleWishlist} disabled={actionLoading}>
                 Lista de Deseos
               </button>
             </div>

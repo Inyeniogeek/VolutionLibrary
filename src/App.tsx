@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { useEffect, lazy, Suspense } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { Toaster, toast } from 'sonner';
 import { supabase } from './services/supabase';
 import { setAuth, clearAuth } from './features/auth/authSlice';
 import type { RootState } from './store';
@@ -18,21 +19,24 @@ const Navbar = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     dispatch(clearAuth());
+    toast.success('Sesión cerrada correctamente');
   };
 
   return (
-    <nav className="glass-panel" style={{ padding: '1.5rem 2rem', marginBottom: '3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: 'var(--border-radius-xl)' }}>
-      <h2 style={{ margin: 0, fontSize: '1.8rem', background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>VolutionLibrary</h2>
-      <div className="flex" style={{ gap: '1rem', alignItems: 'center' }}>
-        <Link to="/">Catálogo</Link>
+    <nav className="glass-panel p-6 mb-12 flex justify-between items-center rounded-3xl">
+      <h2 className="m-0 text-3xl font-semibold bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
+        VolutionLibrary
+      </h2>
+      <div className="flex gap-4 items-center">
+        <Link to="/" className="text-zinc-300 hover:text-indigo-400 transition-colors">Catálogo</Link>
         {user ? (
           <>
-            <Link to="/loans">Mis Préstamos</Link>
-            <Link to="/wishlist">Lista de Deseos</Link>
-            <button onClick={handleLogout} className="btn btn-secondary" style={{ padding: '0.25rem 1rem' }}>Salir</button>
+            <Link to="/loans" className="text-zinc-300 hover:text-indigo-400 transition-colors">Mis Préstamos</Link>
+            <Link to="/wishlist" className="text-zinc-300 hover:text-indigo-400 transition-colors">Lista de Deseos</Link>
+            <button onClick={handleLogout} className="btn btn-secondary px-4 py-1 text-sm">Salir</button>
           </>
         ) : (
-          <Link to="/login" className="btn btn-secondary" style={{ padding: '0.25rem 1rem' }}>Ingresar</Link>
+          <Link to="/login" className="btn btn-secondary px-4 py-1 text-sm">Ingresar</Link>
         )}
       </div>
     </nav>
@@ -58,10 +62,11 @@ function App() {
 
   return (
     <Router>
-      <div className="container flex flex-col" style={{ minHeight: '100vh', paddingTop: '1.5rem', paddingBottom: '1.5rem' }}>
+      <Toaster position="top-right" richColors theme="dark" />
+      <div className="max-w-7xl mx-auto px-6 min-h-screen flex flex-col py-6">
         <Navbar />
-        <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <Suspense fallback={<div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>Cargando página...</div>}>
+        <main className="flex-1 flex flex-col">
+          <Suspense fallback={<div className="text-center py-16 text-zinc-400">Cargando página...</div>}>
             <Routes>
               <Route path="/" element={<BookCatalog />} />
               <Route path="/book/:id" element={<BookDetails />} />
@@ -71,7 +76,7 @@ function App() {
             </Routes>
           </Suspense>
         </main>
-        <footer style={{ textAlign: 'center', marginTop: 'auto', paddingTop: '2rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+        <footer className="text-center mt-auto pt-8 text-zinc-500 text-sm">
           Desarrollado por Inyeniogeek
         </footer>
       </div>

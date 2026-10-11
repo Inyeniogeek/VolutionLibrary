@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
+import { Trash2 } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 
 interface WishlistItem {
@@ -38,35 +40,42 @@ const Wishlist = () => {
       .eq('id', id);
       
     if (!error) {
+      toast.success('Libro eliminado de la lista de deseos');
       fetchWishlist();
+    } else {
+      toast.error('Error al eliminar el libro');
     }
   };
 
-  if (loading) return <div style={{ textAlign: 'center', padding: '4rem' }}>Cargando lista de deseos...</div>;
+  if (loading) return <div className="text-center py-16 text-zinc-400">Cargando lista de deseos...</div>;
 
   return (
     <div className="animate-fade-in">
-      <h1 style={{ marginBottom: '2rem' }}>Mi Lista de Deseos</h1>
+      <h1 className="text-3xl font-semibold mb-8">Mi Lista de Deseos</h1>
       
       {items.length === 0 ? (
-        <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+        <div className="glass-panel p-12 text-center text-zinc-400">
           Tu lista de deseos está vacía.
         </div>
       ) : (
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '2rem' }}>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
           {items.map(item => (
-            <div key={item.id} className="glass-panel flex flex-col" style={{ overflow: 'hidden' }}>
-              <Link to={`/book/${item.book_id}`} style={{ display: 'block', height: '200px', background: 'var(--bg-secondary)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <div key={item.id} className="glass-panel flex flex-col overflow-hidden group hover:translate-y-[-4px] transition-all">
+              <Link to={`/book/${item.book_id}`} className="h-52 bg-zinc-900 flex justify-center items-center overflow-hidden">
                 {item.cover_url ? (
-                  <img src={item.cover_url} alt={item.title} style={{ height: '100%', width: '100%', objectFit: 'cover' }} />
+                  <img src={item.cover_url} alt={item.title} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
                 ) : (
-                  <span style={{ color: 'var(--text-muted)' }}>Sin Portada</span>
+                  <span className="text-zinc-500 text-sm">Sin Portada</span>
                 )}
               </Link>
-              <div style={{ padding: '1rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <h3 style={{ fontSize: '1rem', marginBottom: '0.25rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.title}</h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1rem', flex: 1 }}>{item.author}</p>
-                <button className="btn btn-secondary" style={{ padding: '0.4rem', fontSize: '0.75rem', width: '100%', color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.3)' }} onClick={() => handleRemove(item.id)}>
+              <div className="p-4 flex-1 flex flex-col">
+                <h3 className="text-sm font-medium mb-1 line-clamp-2 text-white">{item.title}</h3>
+                <p className="text-xs text-zinc-400 mb-4 flex-1">{item.author}</p>
+                <button 
+                  className="btn btn-secondary py-1.5 px-3 text-xs w-full text-red-400 border-red-500/30 hover:bg-red-500/20 flex items-center justify-center gap-1.5" 
+                  onClick={() => handleRemove(item.id)}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
                   Eliminar
                 </button>
               </div>

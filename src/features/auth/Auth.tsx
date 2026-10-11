@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { supabase } from '../../services/supabase';
 
 const Auth = () => {
@@ -20,111 +21,82 @@ const Auth = () => {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        toast.success('Bienvenido de nuevo');
         navigate('/');
       } else {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        alert('Revisa tu correo para verificar tu cuenta');
+        toast.info('Revisa tu correo para verificar tu cuenta');
       }
     } catch (err: any) {
-      setError(err.message || 'Error durante la autenticación');
+      const msg = err.message || 'Error durante la autenticación';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="animate-fade-in flex" style={{ flex: 1, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '3rem' }}>
-      
-      {/* Left Column: App Title and Description */}
-      <div style={{ flex: '1 1 400px', padding: '2rem' }}>
-        <h1 style={{ fontSize: '4rem', marginBottom: '1rem', background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+    <div className="animate-fade-in flex flex-wrap items-center justify-between gap-12 flex-1">
+      <div className="flex-1 min-w-[320px] p-8">
+        <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
           VolutionLibrary
         </h1>
-        <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+        <p className="text-xl text-zinc-300 leading-relaxed max-w-lg">
           Encuentra tus libros favoritos y tu próxima gran lectura en este catálogo digital.
         </p>
       </div>
 
-      {/* Right Column: Form */}
-      <div style={{ flex: '1 1 400px', display: 'flex', justifyContent: 'center' }}>
-        <div className="glass-panel animate-float" style={{ padding: '3.5rem', width: '100%', maxWidth: '450px', borderRadius: 'var(--border-radius-xl)' }}>
-          <h2 style={{ textAlign: 'center', marginBottom: '2rem', fontSize: '2rem' }}>
+      <div className="flex-1 min-w-[320px] flex justify-center">
+        <div className="glass-panel animate-float p-10 md:p-14 w-full max-w-[450px] rounded-3xl border border-white/10 shadow-2xl">
+          <h2 className="text-center mb-8 text-2xl font-semibold text-white">
             {isLogin ? 'Iniciar Sesión' : 'Registrarse'}
           </h2>
           
           {error && (
-            <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', color: 'var(--danger)', padding: '0.75rem', borderRadius: 'var(--border-radius-sm)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+            <div className="bg-red-500/20 border border-red-500/30 text-red-400 p-3 rounded-lg mb-6 text-sm">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleAuth} className="flex flex-col" style={{ gap: '1.25rem' }}>
-            <div className="flex flex-col" style={{ gap: '0.5rem' }}>
-              <label htmlFor="email" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Correo Electrónico</label>
+          <form onSubmit={handleAuth} className="flex flex-col gap-5">
+            <div className="flex flex-col gap-2">
+              <label htmlFor="email" className="text-sm text-zinc-400 font-medium">Correo Electrónico</label>
               <input
                 id="email"
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                style={{
-                  padding: '1rem',
-                  borderRadius: 'var(--border-radius-md)',
-                  border: '1px solid var(--border-color)',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  color: 'white',
-                  outline: 'none',
-                  fontSize: '1rem',
-                  transition: 'border-color var(--transition-fast)'
-                }}
-                onFocus={(e) => e.target.style.borderColor = 'var(--accent-primary)'}
-                onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
+                className="p-3.5 rounded-xl border border-white/10 bg-white/5 text-white outline-none text-base focus:border-indigo-500 transition-colors"
               />
             </div>
             
-            <div className="flex flex-col" style={{ gap: '0.5rem' }}>
-              <label htmlFor="password" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Contraseña</label>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="password" className="text-sm text-zinc-400 font-medium">Contraseña</label>
               <input
                 id="password"
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                style={{
-                  padding: '1rem',
-                  borderRadius: 'var(--border-radius-md)',
-                  border: '1px solid var(--border-color)',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  color: 'white',
-                  outline: 'none',
-                  fontSize: '1rem',
-                  transition: 'border-color var(--transition-fast)'
-                }}
-                onFocus={(e) => e.target.style.borderColor = 'var(--accent-primary)'}
-                onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
+                className="p-3.5 rounded-xl border border-white/10 bg-white/5 text-white outline-none text-base focus:border-indigo-500 transition-colors"
               />
             </div>
             
-            <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem', padding: '1rem', fontSize: '1.1rem', borderRadius: 'var(--border-radius-lg)' }} disabled={loading}>
+            <button type="submit" className="btn btn-primary mt-4 py-3.5 text-base rounded-xl font-medium" disabled={loading}>
               {loading ? 'Procesando...' : isLogin ? 'Ingresar' : 'Crear Cuenta'}
             </button>
           </form>
           
-          <div style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.9rem' }}>
-            <span style={{ color: 'var(--text-muted)' }}>
+          <div className="mt-8 text-center text-sm">
+            <span className="text-zinc-500">
               {isLogin ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? '}
             </span>
             <button
               onClick={() => setIsLogin(!isLogin)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--accent-primary)',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                fontWeight: 600,
-              }}
+              className="bg-transparent border-0 text-indigo-400 cursor-pointer font-semibold hover:underline"
             >
               {isLogin ? 'Regístrate aquí' : 'Inicia sesión'}
             </button>
