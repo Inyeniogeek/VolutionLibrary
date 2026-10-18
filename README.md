@@ -1,65 +1,188 @@
-# VolutionLibrary - Documentación del Proyecto
+# VolutionLibrary
+
+> Plataforma web moderna de catálogo y gestión bibliotecaria digital desarrollada con React 19, TypeScript, Vite, Redux Toolkit, Tailwind CSS v4 y Supabase.
+
+**Enlace en vivo:** [https://volutionlibrary.pages.dev/](https://volutionlibrary.pages.dev/)
+
+**Enlace al repositorio:** [GitHub Repository](https://github.com/Inyeniogeek/VolutionLibrary)
+
+---
+
+## Descripción del Proyecto
+
+VolutionLibrary es una aplicación web interactiva que permite a los usuarios descubrir lecturas a través de la API abierta de OpenLibrary, filtrar libros por género, solicitar préstamos con control de disponibilidad y administrar su propia lista de deseos personal.
+
+Toda la persistencia de usuarios, sesiones y registros de préstamos está respaldada por una base de datos relacional PostgreSQL y autenticación basada en tokens JWT gestionada a través de Supabase, acompañada de una interfaz visual en modo oscuro con diseño _glassmorphism_, micro-animaciones fluidas y notificaciones interactivas con Sonner.
+
+---
+
+## Características Principales
+
+- **Catálogo Digital Interactivo**: Exploración de obras literarias con portadas en alta calidad, autores, fechas de publicación y sinopsis detalladas obtenidas en tiempo real desde la API de OpenLibrary.
+- **Filtros Dinámicos por Género**: Navegación rápida por categorías temáticas (Aventura, Acción, Ciencia Ficción, Fantasía, Misterio, Romance, Terror, Historia y Tecnología) con selector interactivo y buscador por texto libre.
+- **Autenticación Basada en Tokens**: Sistema completo de registro e inicio de sesión con JWT emitidos por Supabase, persistencia segura en `localStorage` y sincronización en tiempo real del estado global del usuario con Redux.
+- **Gestión Inteligente de Préstamos**:
+  - Solicitud de préstamos por 14 días.
+  - Prevención de duplicados: La aplicación detecta si el usuario ya tiene un libro en préstamo activo y bloquea solicitudes repetidas.
+  - Historial y fecha de devolución: Al devolver un libro se registra y visualiza la fecha y hora exacta de devolución, permitiendo volver a solicitarlo en el futuro.
+- **Lista de Deseos Personalizada**: Guardado rápido de libros favoritos para consultarlos o pedirlos prestados más adelante.
+- **Sistema de Notificaciones con Sonner**: Notificaciones _toast_ modernas para confirmar préstamos, devoluciones, altas/bajas de la lista de deseos y errores de red.
+- **Rendimiento Optimizado**: Carga diferida de rutas con `React.lazy` y `<Suspense>`, atributo `loading="lazy"` en imágenes y memorización de funciones con `useCallback`.
+
+---
+
+## Stack Tecnológico
+
+| Capa / Herramienta          | Tecnología                    | Propósito                                                               |
+| :-------------------------- | :---------------------------- | :---------------------------------------------------------------------- |
+| **Framework Frontend**      | React 19 + TypeScript         | Construcción de interfaces tipadas, modulares y reactivas               |
+| **Bundler & Tooling**       | Vite 8 + `@tailwindcss/vite`  | Servidor de desarrollo ultrarrápido y compilación optimizada            |
+| **Gestión de Estado**       | Redux Toolkit + React-Redux   | Centralización predecible del estado de autenticación y catálogo        |
+| **Enrutamiento**            | React Router DOM 7            | Navegación SPA con división de código a nivel de ruta                   |
+| **Estilos & UI**            | Tailwind CSS v4 + Vanilla CSS | Sistema de diseño en modo oscuro, efectos _glassmorphism_ y animaciones |
+| **Iconografía & Alertas**   | Lucide React + Sonner         | Iconos vectoriales limpios y sistema moderno de notificaciones _toast_  |
+| **Backend & Base de Datos** | Supabase (PostgreSQL + Auth)  | Base de datos relacional, emisión de tokens JWT y políticas RLS         |
+| **API Externa de Libros**   | OpenLibrary REST API          | Consultas asíncronas de obras, autores y portadas sin límite de cuota   |
+| **Testing**                 | Jest + React Testing Library  | Pruebas unitarias e integración de componentes y hooks                  |
+| **Hosting & Despliegue**    | Cloudflare Pages              | Entrega global en la red Edge con integración continua                  |
+
+---
 
 ## Arquitectura y Decisiones Técnicas
 
-He estado manejando todo con Supabase ya que me pareció más cómodo y rápido para el funcionamiento de la aplicación, y me centré más en la optimización, el rendimiento y la experiencia de usuario. 
+### 1. Autenticación y Seguridad
 
-Lo bueno de usar Supabase es que me permite gestionar tanto una base de datos relacional PostgreSQL como un sistema completo y robusto de autenticación basado en tokens JWT sin necesidad de levantar un servidor Node/Express desde cero. De esta forma, tengo resuelto el almacenamiento seguro de contraseñas, la emisión y renovación automática de tokens de acceso, y las políticas de seguridad a nivel de filas (RLS).
+- **Flujo de tokens JWT**: El usuario envía sus credenciales al endpoint de autenticación de Supabase. Al autenticarse, recibe un `access_token` y un `refresh_token`. El cliente guarda automáticamente la sesión en el almacenamiento local y adjunta el token en la cabecera `Authorization: Bearer <token>` para cada consulta a las tablas `loans` y `wishlist`.
+- **Seguridad por Fila (RLS)**: Las políticas configuradas en PostgreSQL garantizan que cada usuario solo pueda consultar, insertar o actualizar sus propios préstamos y listas de deseos.
 
----
+### 2. Separación de Responsabilidades y Hooks
 
-## Integración con Backend y Autenticación Basada en Tokens
+- La lógica de consumo de la API de libros y la gestión de estados asíncronos está encapsulada en el hook personalizado `useBookSearch`, desacoplando la lógica de negocio de la vista del catálogo.
+- De igual forma, el hook `useAuth` abstrae la suscripción a la sesión y las funciones de cierre de sesión.
 
-Para la comunicación con el backend he integrado dos capas de servicios:
+### 3. Rendimiento y Carga Diferida
 
-1. **API REST de OpenLibrary**: La utilizo para consultar el catálogo general de libros y los detalles de cada obra en tiempo real mediante peticiones HTTP asíncronas con `fetch`.
-2. **Backend as a Service con Supabase**: Gestiona las operaciones de base de datos relacional para el sistema de préstamos (`loans`) y la lista de deseos (`wishlist`), además del ciclo de vida de usuarios y sesiones.
-
-### Flujo Completo de Autenticación por Tokens
-
-El flujo de autenticación implementado funciona de la siguiente manera:
-
-- **Inicio de sesión y Registro**: En el componente `Auth`, el usuario ingresa sus credenciales (correo y contraseña). Mediante `supabase.auth.signInWithPassword` o `supabase.auth.signUp`, Supabase valida los datos en el servidor y retorna una sesión que incluye un JWT de acceso (`access_token`) y un token de actualización (`refresh_token`).
-- **Almacenamiento y Envío de Token**: El cliente de Supabase almacena el token de sesión de forma segura y persistente en el almacenamiento local del navegador (`localStorage`). Cada petición posterior a las tablas de base de datos (`loans`, `wishlist`) adjunta automáticamente este token en la cabecera `Authorization: Bearer <access_token>`, permitiendo verificar la identidad del usuario en cada transacción.
-- **Sincronización de Estado Global con Redux**: Al cargar la aplicación (`App.tsx`), verifico la existencia de una sesión activa mediante `supabase.auth.getSession()` y escucho los cambios de estado en tiempo real con `supabase.auth.onAuthStateChange()`, actualizando el estado de Redice (`authSlice`) con los datos del usuario y la sesión actual.
-- **Cierre de Sesión**: Al hacer clic en salir, invoco `supabase.auth.signOut()`, lo cual invalida y destruye el token en el cliente y en el servidor, seguido del reseteo del estado global en Redux con `dispatch(clearAuth())`.
+- Todas las vistas principales (`Auth`, `BookCatalog`, `BookDetails`, `Loans`, `Wishlist`) se cargan bajo demanda mediante `React.lazy` y `Suspense`, minimizando el tamaño del paquete inicial transferido al navegador.
 
 ---
 
-## Pruebas Unitarias e de Integración
+## Estructura del Proyecto
 
-He configurado un entorno de pruebas con **Jest** y **React Testing Library** para asegurar la fiabilidad de las funcionalidades más críticas de la plataforma. Para ejecutar las pruebas en modo desarrollo y validar las suites:
+```text
+Capstone/
+├── public/                  # Favicon y recursos estáticos
+├── src/
+│   ├── assets/              # Archivos multimedia y logos
+│   ├── features/            # Módulos organizados por funcionalidad
+│   │   ├── auth/            # Vista de login/registro y authSlice
+│   │   ├── books/           # Catálogo, vista de detalles y bookSlice
+│   │   └── loans/           # Gestión de préstamos y lista de deseos
+│   ├── hooks/               # Hooks personalizados (useBookSearch, useAuth)
+│   ├── lib/                 # Utilidades (cn para shadcn/tailwind)
+│   ├── services/            # Clientes de API (bookApi.ts, supabase.ts)
+│   ├── store/               # Configuración central de Redux Toolkit
+│   ├── App.tsx              # Rutas, Navbar, Toaster y layout principal
+│   ├── index.css            # Configuración de Tailwind CSS v4 y tokens visuales
+│   ├── main.tsx             # Punto de entrada de React 19
+│   └── setupTests.ts        # Configuración del entorno de pruebas
+├── __mocks__/               # Mocks de estilos y dependencias para Jest
+├── index.html               # Plantilla HTML con título y metadatos
+├── jest.config.cjs          # Configuración de Jest con ts-jest
+├── package.json             # Dependencias y scripts del proyecto
+├── tsconfig.app.json        # Configuración de TypeScript
+└── vite.config.ts           # Configuración de Vite con plugins
+```
+
+---
+
+## Instrucciones de Configuración y Ejecución Local
+
+### Requisitos Previos
+
+- [Node.js](https://nodejs.org/) (versión 20 o superior recomendada).
+- [pnpm](https://pnpm.io/) (versión 9 o superior).
+
+### 1. Clonar el Repositorio
+
+```bash
+git clone https://github.com/tu-usuario/volutionlibrary.git
+cd volutionlibrary
+```
+
+### 2. Instalar Dependencias
+
+```bash
+pnpm install
+```
+
+### 3. Configurar Variables de Entorno
+
+Crea un archivo `.env` en la raíz del proyecto tomando como referencia el archivo `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Contenido necesario dentro de `.env`:
+
+```env
+VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
+VITE_SUPABASE_ANON_KEY=tu-clave-publica-anon
+VITE_SUPABASE_PUBLISHABLE_KEY=tu-clave-publica-anon
+```
+
+### 4. Ejecutar en Modo Desarrollo
+
+```bash
+pnpm dev
+```
+
+La aplicación se iniciará localmente en `http://localhost:5173/`.
+
+### 5. Ejecutar la Suite de Pruebas
+
+Para correr las pruebas unitarias y de integración con Jest y React Testing Library:
 
 ```bash
 pnpm test
 ```
 
-### 1. Hook Personalizado (`useBookSearch`)
-- **Archivo**: `src/hooks/useBookSearch.test.ts`
-- **Cobertura**: Verifica la inicialización del estado, la llamada a la función de búsqueda simulando la API REST externa (`fetch` / `bookApi`), el manejo correcto de errores cuando la petición falla, y el vaciado del listado ante búsquedas vacías.
-- **Simulación**: Se simula el módulo `bookApi` para aislar la lógica del hook sin depender de la red real.
+### 6. Compilar para Producción
 
-### 2. Componente de Autenticación (`Auth`)
-- **Archivo**: `src/features/auth/Auth.test.tsx`
-- **Cobertura**: Comprueba el renderizado inicial del formulario de login, el cambio dinámico entre login y registro, el flujo exitoso de inicio de sesión con llamada a `signInWithPassword` y redirección al catálogo, así como la captura y visualización de errores de credenciales inválidas.
-- **Simulación**: Se simula el cliente de Supabase (`supabase.auth`) y el hook de navegación `useNavigate` de `react-router-dom`.
+```bash
+pnpm build
+```
 
-### 3. Catálogo de Libros (`BookCatalog`)
-- **Archivo**: `src/features/books/BookCatalog.test.tsx`
-- **Cobertura**: Valida la carga inicial de los libros con Redux, el renderizado de tarjetas con títulos, autores y estados de portada, el envío del formulario de búsqueda para solicitar nuevos resultados, y la presentación de mensajes de error cuando el servicio REST no responde.
-- **Simulación**: Se simula `searchBooks` y se integra con un `configureStore` de Redux Toolkit y `MemoryRouter`.
+Para previsualizar el bundle generado en la carpeta `dist`:
 
-### 4. Detalles del Libro y Acciones de Préstamo (`BookDetails`)
-- **Archivo**: `src/features/books/BookDetails.test.tsx`
-- **Cobertura**: Verifica la carga y visualización de información extendida del libro, la redirección obligatoria al formulario de login si un usuario no autenticado intenta solicitar un préstamo, y la ejecución exitosa de la inserción en la tabla `loans` cuando el usuario cuenta con una sesión válida.
-- **Simulación**: Se simula `getBookById`, `supabase.from('loans').insert`, y el hook de enrutamiento.
+```bash
+pnpm preview
+```
 
 ---
 
-## Optimizaciones de Rendimiento
+## Pruebas Automatizadas
 
-Para asegurar una carga veloz y una navegación fluida, he implementado las siguientes técnicas:
+El proyecto incluye 13 pruebas unitarias y de integración que cubren los flujos esenciales:
 
-- **Carga diferida (Lazy Loading) y Code Splitting**: División de rutas principales (`Auth`, `BookCatalog`, `BookDetails`, `Loans`, `Wishlist`) mediante `React.lazy` y `Suspense`, cargando los módulos únicamente cuando el usuario navega a ellos.
-- **Carga diferida de imágenes**: Atributo `loading="lazy"` en todas las portadas de libros para evitar la descarga innecesaria de imágenes fuera del viewport.
-- **Memorización y Callbacks**: Empleo de `useCallback` en búsquedas y operaciones frecuentes para evitar re-renderizados innecesarios.
+1. **`useBookSearch.test.ts`**: Valida la inicialización de estado, consultas asíncronas con mock de API, manejo de fallos de red y limpieza ante búsquedas vacías.
+2. **`Auth.test.tsx`**: Valida el renderizado de campos, alternancia entre login y registro, envío correcto a Supabase Auth, redirección y captura de credenciales inválidas.
+3. **`BookCatalog.test.tsx`**: Valida la carga inicial con Redux, renderizado de tarjetas, envío del buscador y presentación de errores.
+4. **`BookDetails.test.tsx`**: Valida la visualización detallada, redirección a login para usuarios no autenticados y la inserción exitosa de préstamos en base de datos.
+
+---
+
+## Despliegue en Producción
+
+La aplicación se encuentra desplegada de forma continua en **Cloudflare Pages**:
+
+- **URL de Producción:** [https://volutionlibrary.pages.dev/](https://volutionlibrary.pages.dev/)
+- **Rama de Despliegue:** `main`
+- **Comando de Compilación:** `pnpm build`
+- **Directorio de Salida:** `dist`
+
+---
+
+## Autor
+
+Desarrollado por **Inyeniogeek** como proyecto Capstone de Desarrollo Web.

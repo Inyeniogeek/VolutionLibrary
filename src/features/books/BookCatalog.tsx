@@ -1,15 +1,28 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, Sparkles } from 'lucide-react';
 import type { RootState } from '../../store';
 import { searchBooks } from '../../services/bookApi';
 import { setBooks, setLoading, setError, setSearchQuery } from './bookSlice';
 
+const GENRES = [
+  { id: 'aventura', label: 'Aventura', query: 'adventure' },
+  { id: 'accion', label: 'Acción', query: 'action' },
+  { id: 'scifi', label: 'Ciencia Ficción', query: 'science fiction' },
+  { id: 'fantasia', label: 'Fantasía', query: 'fantasy' },
+  { id: 'misterio', label: 'Misterio', query: 'mystery' },
+  { id: 'romance', label: 'Romance', query: 'romance' },
+  { id: 'terror', label: 'Terror', query: 'horror' },
+  { id: 'historia', label: 'Historia', query: 'history' },
+  { id: 'tecnologia', label: 'Tecnología', query: 'technology' }
+];
+
 const BookCatalog = () => {
   const dispatch = useDispatch();
   const { items, loading, error, searchQuery } = useSelector((state: RootState) => state.books);
-  const [localQuery, setLocalQuery] = useState(searchQuery || 'programming');
+  const [localQuery, setLocalQuery] = useState(searchQuery || 'adventure');
+  const [activeGenre, setActiveGenre] = useState<string>('aventura');
 
   const fetchBooks = useCallback(async (query: string) => {
     dispatch(setLoading(true));
@@ -31,17 +44,24 @@ const BookCatalog = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (localQuery.trim()) {
+      setActiveGenre('');
       fetchBooks(localQuery);
     }
   };
 
+  const handleGenreSelect = (genreId: string, query: string) => {
+    setActiveGenre(genreId);
+    setLocalQuery(query);
+    fetchBooks(query);
+  };
+
   return (
     <div className="animate-fade-in">
-      <div className="text-center mb-12">
+      <div className="text-center mb-10">
         <h1 className="text-4xl md:text-5xl font-bold mb-4">Catálogo de Libros</h1>
         <p className="text-zinc-400 mb-8 max-w-xl mx-auto">Encuentra tu próxima lectura en nuestra biblioteca digital.</p>
         
-        <form onSubmit={handleSearch} className="flex items-center justify-center gap-4 max-w-2xl mx-auto">
+        <form onSubmit={handleSearch} className="flex items-center justify-center gap-4 max-w-2xl mx-auto mb-8">
           <div className="relative flex-1">
             <input
               type="text"
@@ -56,6 +76,29 @@ const BookCatalog = () => {
             {loading ? 'Buscando...' : 'Buscar'}
           </button>
         </form>
+
+        <div className="flex flex-wrap items-center justify-center gap-2 max-w-4xl mx-auto">
+          <span className="text-xs text-zinc-400 flex items-center gap-1 mr-2 font-medium">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-400" /> Géneros:
+          </span>
+          {GENRES.map((genre) => {
+            const isActive = activeGenre === genre.id;
+            return (
+              <button
+                key={genre.id}
+                type="button"
+                onClick={() => handleGenreSelect(genre.id, genre.query)}
+                className={`text-xs px-4 py-2 rounded-full transition-all duration-200 cursor-pointer ${
+                  isActive
+                    ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold shadow-md shadow-indigo-500/25 scale-105'
+                    : 'bg-white/5 border border-white/10 text-zinc-300 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                {genre.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {error && (

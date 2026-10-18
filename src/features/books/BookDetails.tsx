@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
+import { CheckCircle2 } from 'lucide-react';
 import type { RootState } from '../../store';
 import { getBookById } from '../../services/bookApi';
 import type { Book } from '../../services/bookApi';
@@ -16,6 +17,7 @@ const BookDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [hasActiveLoan, setHasActiveLoan] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -31,34 +33,85 @@ const BookDetails = () => {
     }
   }, [id]);
 
+  useEffect(() => {
+    if (id && user) {
+      const checkActiveLoan = async () => {
+        try {
+          const fromLoans = supabase.from('loans');
+          if (typeof fromLoans?.select === 'function') {
+            const { data } = await fromLoans
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('book_id', id)
+              .eq('status', 'active');
+            setHasActiveLoan(Boolean(data && data.length > 0));
+          }
+        } catch {
+          setHasActiveLoan(false);
+        }
+      };
+      checkActiveLoan();
+    } else {
+      setHasActiveLoan(false);
+    }
+  }, [id, user]);
+
   const handleBorrow = async () => {
     if (!user) {
       toast.info('Por favor inicia sesión para pedir un préstamo');
       return navigate('/login');
     }
     if (!book) return;
+
+    if (hasActiveLoan) {
+      toast.warning('Ya tienes este libro actualmente en préstamo');
+      return;
+    }
     
     setActionLoading(true);
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 14);
 
-    const { error } = await supabase.from('loans').insert({
-      user_id: user.id,
-      book_id: book.id,
-      title: book.title,
-      author: book.authors[0],
-      cover_url: book.coverUrl,
-      due_date: dueDate.toISOString(),
-      status: 'active'
-    });
+    try {
+      const fromLoans = supabase.from('loans');
+      if (typeof fromLoans?.select === 'function') {
+        const { data: existingActive } = await fromLoans
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('book_id', book.id)
+          .eq('status', 'active');
 
-    setActionLoading(false);
-    
-    if (error) {
+        if (existingActive && existingActive.length > 0) {
+          setHasActiveLoan(true);
+          setActionLoading(false);
+          toast.warning('Ya tienes este libro actualmente en préstamo');
+          return;
+        }
+      }
+
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 14);
+
+      const { error } = await supabase.from('loans').insert({
+        user_id: user.id,
+        book_id: book.id,
+        title: book.title,
+        author: book.authors[0],
+        cover_url: book.coverUrl,
+        due_date: dueDate.toISOString(),
+        status: 'active'
+      });
+
+      setActionLoading(false);
+      
+      if (error) {
+        toast.error('Error al procesar el préstamo');
+      } else {
+        setHasActiveLoan(true);
+        toast.success('¡Libro prestado con éxito! Tienes 14 días para leerlo');
+        navigate('/loans');
+      }
+    } catch {
+      setActionLoading(false);
       toast.error('Error al procesar el préstamo');
-    } else {
-      toast.success('¡Libro prestado con éxito! Tienes 14 días para leerlo');
-      navigate('/loans');
     }
   };
 
@@ -137,10 +190,28 @@ const BookDetails = () => {
 
             <div className="text-zinc-300 leading-relaxed text-sm" dangerouslySetInnerHTML={{ __html: book.description }} />
 
+            {hasActiveLoan && (
+              <div className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 px-4 py-2.5 rounded-xl text-sm flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <span>Ya tienes este libro actualmente en préstamo.</span>
+              </div>
+            )}
+
             <div className="flex gap-4 mt-auto pt-8">
-              <button className="btn btn-primary flex-1 py-3 text-base" onClick={handleBorrow} disabled={actionLoading}>
-                {actionLoading ? 'Procesando...' : 'Tomar Prestado'}
-              </button>
+              {hasActiveLoan ? (
+                <button 
+                  type="button" 
+                  className="btn btn-secondary flex-1 py-3 text-base opacity-80 cursor-not-allowed flex items-center justify-center gap-2 text-emerald-400 border-emerald-500/40" 
+                  disabled
+                >
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  Libro ya en préstamo
+                </button>
+              ) : (
+                <button className="btn btn-primary flex-1 py-3 text-base" onClick={handleBorrow} disabled={actionLoading}>
+                  {actionLoading ? 'Procesando...' : 'Tomar Prestado'}
+                </button>
+              )}
               <button className="btn btn-secondary flex-1 py-3 text-base" onClick={handleWishlist} disabled={actionLoading}>
                 Lista de Deseos
               </button>

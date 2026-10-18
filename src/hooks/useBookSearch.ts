@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { searchBooks } from '../services/bookApi';
 import type { Book } from '../services/bookApi';
 
-export const useBookSearch = (initialQuery = 'programming') => {
+export const useBookSearch = (initialQuery = 'adventure') => {
   const [query, setQuery] = useState(initialQuery);
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(false);
